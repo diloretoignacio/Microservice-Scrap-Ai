@@ -1,5 +1,7 @@
 package com.example.microservicescrap.controller;
 
+import com.example.microservicescrap.entity.ScrapResult;
+import com.example.microservicescrap.repository.ScrapResultRepository;
 import com.example.microservicescrap.security.TokenValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +21,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 public class ScrapController {
@@ -28,6 +31,9 @@ public class ScrapController {
     public ScrapController(TokenValidator tokenValidator) {
         this.tokenValidator = tokenValidator;
     }
+
+    @Autowired
+    private ScrapResultRepository scrapResultRepository;
 
     @PostMapping("/check")
     @CrossOrigin
@@ -40,8 +46,8 @@ public class ScrapController {
             Claims claims = tokenValidator.getClaim(jwt);
             String user = claims.getSubject();
 
-            String apiKey = "xJPizhEVztPuOcfclwPM";
-            String apiUrl = "https://classify.roboflow.com/audit-scrap-ai2/2";
+            String apiKey = "YSnV9H1O85C19cTrM0rR";
+            String apiUrl = "https://classify.roboflow.com/dalmine-ai-scrap/1";
 
             String base64Image = checkRequest.getBytesImage();
             String queryString = "api_key=" + apiKey;
@@ -65,7 +71,27 @@ public class ScrapController {
             double confidence = jsonNode.get("confidence").asDouble();
             String classScrap = jsonNode.get("top").asText();
 
-            ResponseEntity<CheckResponse> successResponse = ResponseEntity.ok(new CheckResponse(classScrap, confidence));
+            // Dividir la cadena en dos partes usando el espacio en blanco y el guion como delimitadores
+            String[] parts = classScrap.split("\\s*-\\s*");
+
+            // La primera parte es el codigo
+            String classScrapCode = parts[0].trim();
+
+            // La segunda parte es el nombre
+            String classScrapName = parts[1].trim();
+
+            int kg = checkRequest.getKg();
+
+            ScrapResult scrapResult = new ScrapResult();
+            scrapResult.setClassScrapCode(classScrapCode);
+            scrapResult.setClassScrapName(classScrapName);
+            scrapResult.setConfidence(confidence);
+            scrapResult.setKg(kg);
+            scrapResult.setUsername(user);
+
+            scrapResultRepository.save(scrapResult);
+
+            ResponseEntity<CheckResponse> successResponse = ResponseEntity.ok(new CheckResponse(classScrapCode, classScrapName, confidence, kg));
             return successResponse;
         } else {
             // Token no válido
@@ -73,4 +99,56 @@ public class ScrapController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mensajeError);
         }
     }
+
+
+
+
+    @GetMapping("/check/all")
+    @CrossOrigin
+    public ResponseEntity getAllScrapResults(@RequestHeader(name = "Authorization") String authorizationHeader) throws URISyntaxException, IOException, InterruptedException {
+
+        String jwt = authorizationHeader.substring(7); // Elimina "Bearer " del encabezado
+
+        if (tokenValidator.validarToken(jwt)) {
+            //Token valido
+            Claims claims = tokenValidator.getClaim(jwt);
+            String user = claims.getSubject();
+
+
+            List<ScrapResult> scrapResults = scrapResultRepository.findAll();
+            return ResponseEntity.ok(scrapResults);
+        } else {
+            // Token no válido
+            String mensajeError = "Token no válido. Debe iniciar sesion nuevamente";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mensajeError);
+        }
+    }
+
+
+
+
+    @GetMapping("/check/{username}")
+    @CrossOrigin
+    public ResponseEntity getScrapResultsByUsername(
+            @RequestHeader(name = "Authorization") String authorizationHeader,
+            @PathVariable String username
+    ) throws URISyntaxException, IOException, InterruptedException {
+
+        String jwt = authorizationHeader.substring(7);
+
+        if (tokenValidator.validarToken(jwt)) {
+            // Token válido
+            Claims claims = tokenValidator.getClaim(jwt);
+            String loggedInUser = claims.getSubject();
+
+            List<ScrapResult> scrapResults = scrapResultRepository.findByUsername(username);
+            return ResponseEntity.ok(scrapResults);
+        } else {
+            // Token no válido
+            String mensajeError = "Token no válido. Debe iniciar sesión nuevamente";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mensajeError);
+        }
+    }
+
+
 }
