@@ -21,6 +21,7 @@ public class ScrapResult {
     private String classScrapName;
     private double confidence;
     private int kg;
+    private String date;
 
     // Getter y Setter para id
     public long getId() {
@@ -74,5 +75,14 @@ public class ScrapResult {
 
     public void setKg(int kg) {
         this.kg = kg;
+    }
+
+    // Getter y Setter para date
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 }

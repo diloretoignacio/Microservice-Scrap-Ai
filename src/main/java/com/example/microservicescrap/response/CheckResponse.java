@@ -6,17 +6,19 @@ public class CheckResponse {
 
     private double confidence;
     private int kg;
+    private String date;
 
     // Constructor vacío (necesario para la deserialización JSON)
     public CheckResponse() {
     }
 
     // Constructor con parámetros
-    public CheckResponse(String classScrapCode, String classScrapName, double confidence, int kg) {
+    public CheckResponse(String classScrapCode, String classScrapName, double confidence, int kg, String date) {
         this.confidence = confidence;
         this.kg = kg;
         this.classScrapCode = classScrapCode;
         this.classScrapName = classScrapName;
+        this.date = date;
     }
 
     // Getters y setters para confidence
@@ -53,5 +55,14 @@ public class CheckResponse {
 
     public void setClassScrapName(String classScrapName) {
         this.classScrapName = classScrapName;
+    }
+
+    // Getters y setters para date
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 }
